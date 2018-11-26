@@ -1,0 +1,93 @@
+---
+title: "Lab 11"
+author: "Reed Magleby"
+date: "November 21, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1. Write a function that generates numbers from binomial(n, p) distribution using runif() function. Hint:
+binomial(n, p) random variable can be defined as a sum of n independent Bernoulli(p) random variables.
+
+```{r}
+binomial <- function(n, size, p) {
+  binom_vect2 <- replicate((n = n), {
+    binomvect <- runif(n = size)
+    logicalvector <- ifelse(binomvect >= 0.5, 1, 0)
+    sum(logicalvector)
+  })
+  return(binom_vect2)
+}
+
+rbinom(10,100,0.5)
+binomial(10,100,0.5)
+```
+
+
+2. Compare performance of your function with rbinom() using microbenchmark() function.
+
+```{r}
+
+library(microbenchmark)
+microbenchmark(binomial(1000, 1000, 0.5), rbinom(1000, 1000, 0.5))
+```
+
+
+3. Suppose we want to simulate data from a linear regression model:
+Yi = ??0 + ??1 × Xi + i i = 1, ..., N
+where  ??? N(0, 3) and X is a covariate that ranges between 20 and 40. Let ??0 = 15 and ??1 = 0.4 are known
+coefficients. Generate data (N = 50) from this models with given coefficients. Fit a linear regression model
+and plot fitted values vs residuals using ggplot() function. Please do not forget to use set.seed() function
+for reproducibility.
+
+```{r}
+library(tidyverse)
+set.seed(123)
+
+x <- sample(20:40, 50, replace = TRUE)
+error <- rnorm(50, 0, 3)
+model <- 15 + (0.4 * x) + error
+
+model_frame <- data.frame(lm(model ~ x)$fitted, lm(model ~ x)$residuals, col.names = c("x", "y"))
+colnames(model_frame) <- c("x", "y")
+
+ggplot(data = model_frame) +
+  geom_point(aes(x = x, y = y)) +
+  labs(x = "Fitted values", y = "residuals")
+```
+
+
+4. Box-Muller algorithm: generate U1 and U2 two independent uniform(0, 1) random variables and set:
+R =
+p
+???2 log(U1) and ?? = 2??U2
+then
+X = R cos(??) and Y = R sin(??)
+are two independent normal variables. Write a function that generates normal variates using Box-Muller
+algorithm. Compare simulated data from your function with simulated data from rnorm() function
+using ggplot() (histogram?).
+
+```{r}
+boxmuller <- function(n) {
+  u1 <- runif(n, 0, 1)
+  u2 <- runif(n, 0, 1)
+  r <- sqrt(-2 * log(u1))
+  theta <- 2 * pi * u2
+
+  x <- r * cos(theta)
+  y <- r * sin(theta)
+}
+
+model <- data.frame(boxmuller(1000))
+normal <- data.frame(rnorm(1000))
+
+ggplot() +
+  geom_freqpoly(data = model, aes(model$boxmuller.1000., stat(density), color = "Box Muller Model")) +
+  geom_freqpoly(data = normal, aes(normal$rnorm.1000., stat(density), color = "Normal Model")) +
+  labs(x = NULL)
+```
+
+
